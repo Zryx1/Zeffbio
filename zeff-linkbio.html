@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeff</title>
+<style>
+  /* ============================================================
+     CARA GANTI FOTO PROFIL, BACKGROUND VIDEO, DAN LINK:
+     Scroll ke bagian <script> paling bawah, cari "CONFIG".
+     Tinggal ganti value di dalam tanda kutip "..." nya saja.
+     Untuk video/gambar dari catbox.moe, upload filenya di
+     https://catbox.moe/ lalu copy link hasilnya (contoh:
+     https://files.catbox.moe/abcdef.mp4) ke bagian videoUrl.
+     ============================================================ */
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #000;
+    overflow-x: hidden;
+  }
+
+  .bg-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background: #000;
+  }
+
+  .bg-wrap video, .bg-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.55) saturate(0.9);
+  }
+
+  .bg-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(45,180,255,0.18), transparent 70%),
+      linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.85) 100%);
+  }
+
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 64px 20px 40px;
+  }
+
+  .avatar-ring {
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    padding: 4px;
+    background: conic-gradient(from 180deg, #24d3ff, #7a5cff, #ff3d6e, #24d3ff);
+    box-shadow: 0 0 28px rgba(36,211,255,0.55), 0 0 60px rgba(122,92,255,0.25);
+    animation: spin 6s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .avatar-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #0a0a0f;
+    overflow: hidden;
+    animation: unspin 6s linear infinite;
+  }
+
+  @keyframes unspin {
+    to { transform: rotate(-360deg); }
+  }
+
+  .avatar-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .name-row {
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .name {
+    position: relative;
+    display: inline-block;
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-shadow: 0 0 14px rgba(36,211,255,0.45);
+  }
+
+  .name::before,
+  .name::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .name::before {
+    color: #ff3d6e;
+    z-index: -1;
+    animation: glitch-1 4.5s infinite linear alternate-reverse;
+  }
+
+  .name::after {
+    color: #24d3ff;
+    z-index: -1;
+    animation: glitch-2 3.8s infinite linear alternate-reverse;
+  }
+
+  @keyframes glitch-1 {
+    0%, 88%, 100% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+    89% { transform: translate(-3px, 1px); clip-path: inset(10% 0 60% 0); opacity: 0.85; }
+    90% { transform: translate(2px, -1px); clip-path: inset(55% 0 15% 0); opacity: 0.85; }
+    91% { transform: translate(-2px, 0); clip-path: inset(20% 0 40% 0); opacity: 0.85; }
+    92% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+  }
+
+  @keyframes glitch-2 {
+    0%, 91%, 100% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+    92% { transform: translate(3px, -1px); clip-path: inset(65% 0 5% 0); opacity: 0.85; }
+    93.5% { transform: translate(-2px, 1px); clip-path: inset(5% 0 70% 0); opacity: 0.85; }
+    95% { transform: translate(2px, 0); clip-path: inset(35% 0 30% 0); opacity: 0.85; }
+    96% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+  }
+
+  /* --- Realistic scalloped "verified" badge --- */
+  .badge-real {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .badge-real .lobe {
+    position: absolute;
+    width: 13px;
+    height: 13px;
+    border-radius: 40%;
+    top: 50%;
+    left: 50%;
+    background: linear-gradient(135deg, #4fd1ff, #1d9bf0 65%);
+  }
+
+  .badge-real .lobe:nth-child(1) { transform: translate(-50%,-50%) rotate(0deg) translateY(-6.5px) rotate(0deg); }
+  .badge-real .lobe:nth-child(2) { transform: translate(-50%,-50%) rotate(45deg) translateY(-6.5px) rotate(-45deg); }
+  .badge-real .lobe:nth-child(3) { transform: translate(-50%,-50%) rotate(90deg) translateY(-6.5px) rotate(-90deg); }
+  .badge-real .lobe:nth-child(4) { transform: translate(-50%,-50%) rotate(135deg) translateY(-6.5px) rotate(-135deg); }
+  .badge-real .lobe:nth-child(5) { transform: translate(-50%,-50%) rotate(180deg) translateY(-6.5px) rotate(-180deg); }
+  .badge-real .lobe:nth-child(6) { transform: translate(-50%,-50%) rotate(225deg) translateY(-6.5px) rotate(-225deg); }
+  .badge-real .lobe:nth-child(7) { transform: translate(-50%,-50%) rotate(270deg) translateY(-6.5px) rotate(-270deg); }
+  .badge-real .lobe:nth-child(8) { transform: translate(-50%,-50%) rotate(315deg) translateY(-6.5px) rotate(-315deg); }
+
+  .badge-real .core {
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 28%, #5cd6ff, #1d9bf0 55%, #0e78b8);
+    box-shadow: 0 0 9px rgba(29,155,240,0.75), inset 0 0 5px rgba(255,255,255,0.35);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .badge-real .core svg { width: 11px; height: 11px; }
+
+  .tagline {
+    margin-top: 6px;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+  }
+
+  .links {
+    width: 100%;
+    max-width: 420px;
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .link-btn {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 17px 20px;
+    border-radius: 18px;
+    background: rgba(20,20,26,0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    text-decoration: none;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 600;
+    transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .link-btn:active {
+    transform: scale(0.97);
+  }
+
+  .link-btn:hover {
+    background: rgba(30,30,38,0.75);
+    border-color: rgba(255,255,255,0.18);
+  }
+
+  .icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .icon svg { width: 19px; height: 19px; }
+
+  .icon.github { background: #1a1a1a; }
+  .icon.tiktok { background: #000; }
+  .icon.whatsapp { background: #25D366; }
+  .icon.telegram { background: #24A1DE; }
+
+  .chevron {
+    margin-left: auto;
+    opacity: 0.4;
+  }
+
+  .footer {
+    margin-top: 48px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.35);
+    text-transform: lowercase;
+  }
+</style>
+</head>
+<body>
+
+  <div class="bg-wrap" id="bgWrap"></div>
+  <div class="bg-overlay"></div>
+
+  <div class="page">
+    <div class="avatar-ring">
+      <div class="avatar-inner">
+        <img id="avatarImg" src="" alt="avatar">
+      </div>
+    </div>
+
+    <div class="name-row">
+      <span class="name" id="nameText"></span>
+      <span class="badge-real">
+        <span class="lobe"></span><span class="lobe"></span><span class="lobe"></span><span class="lobe"></span>
+        <span class="lobe"></span><span class="lobe"></span><span class="lobe"></span><span class="lobe"></span>
+        <span class="core">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 12.5l2 2 4-4.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </span>
+    </div>
+
+    <div class="tagline">Contact Me</div>
+
+    <div class="links" id="linksWrap"></div>
+
+    <div class="footer" id="footerText"></div>
+  </div>
+
+<script>
+/* ============================================================
+   CONFIG — GANTI SEMUA DI SINI SESUAI KEINGINAN KAMU
+   ============================================================ */
+const CONFIG = {
+  // Nama yang tampil (sudah diganti jadi "Zeff")
+  name: "Zeff",
+
+  // Foto profil (bulat). Ganti dengan link gambar kamu,
+  // bisa dari catbox.moe juga, contoh:
+  // "https://files.catbox.moe/xxxxxx.png"
+  avatarUrl: "https://files.catbox.moe/vzosd5.jpg",
+
+  // Background: bisa VIDEO atau GAMBAR.
+  // Kalau mau pakai video dari catbox.moe, isi videoUrl dengan
+  // link .mp4 nya, contoh: "https://files.catbox.moe/a07j4w.mp4"
+  // Kalau mau pakai gambar saja, kosongkan videoUrl ("")
+  // lalu isi imageUrl.
+  videoUrl: "https://files.catbox.moe/a07j4w.mp4",
+  imageUrl: "",
+
+  // Teks kecil di paling bawah halaman
+  footer: "zeff • 2026",
+
+  // Daftar tombol link. Urutan di array = urutan tampil.
+  // Kalau mau hapus salah satu, hapus seluruh blok { ... } nya.
+  links: [
+    {
+      label: "GitHub",
+      url: "https://github.com/",
+      icon: "github"
+    },
+    {
+      label: "TikTok",
+      url: "https://tiktok.com/@zeffv12",
+      icon: "tiktok"
+    },
+    {
+      label: "WhatsApp",
+      url: "https://wa.me/6285930242266",
+      icon: "whatsapp"
+    },
+    {
+      label: "Telegram",
+      url: "https://t.me/@zeffmoon",
+      icon: "telegram"
+    }
+  ]
+};
+/* ============================================================ */
+
+const ICONS = {
+  github: `<svg viewBox="0 0 24 24" fill="#fff"><path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.25.45-2.28 1.19-3.08-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18.92-.26 1.91-.38 2.89-.39.98 0 1.97.13 2.89.39 2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.24 2.76.12 3.05.74.8 1.18 1.83 1.18 3.08 0 4.41-2.69 5.38-5.25 5.67.41.36.78 1.08.78 2.17 0 1.57-.01 2.83-.01 3.22 0 .31.21.67.8.56A10.51 10.51 0 0 0 23.5 12c0-6.27-5.23-11.5-11.5-11.5z"/></svg>`,
+  tiktok: `<svg viewBox="0 0 24 24" fill="#fff"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.59c.17 0 .34.02.5.05V9.71a5.9 5.9 0 0 0-.5-.02 5.87 5.87 0 1 0 5.87 5.87V9.6a7.13 7.13 0 0 0 4.18 1.34V7.85a4.25 4.25 0 0 1-2.31-2.03z"/></svg>`,
+  whatsapp: `<svg viewBox="0 0 24 24" fill="#fff"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.28-1.38a9.87 9.87 0 0 0 4.71 1.2h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.06c-.24.68-1.39 1.3-1.93 1.38-.49.08-1.11.11-1.79-.11a16.6 16.6 0 0 1-1.62-.6c-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.17-1.55-1.17-2.96 0-1.4.73-2.09 1-2.38.26-.28.57-.35.76-.35.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.11.31.02.5-.09.19-.14.31-.28.47-.14.16-.29.36-.42.48-.14.14-.28.29-.12.57.16.28.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.22 1.37.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.26.14.44.2.5.32.07.11.07.65-.17 1.32z"/></svg>`,
+  telegram: `<svg viewBox="0 0 24 24" fill="#fff"><path d="M21.94 3.36L18.6 20.24c-.25 1.1-.9 1.37-1.83.85l-5.06-3.73-2.44 2.35c-.27.27-.5.5-1.02.5l.36-5.14 9.35-8.45c.41-.36-.09-.56-.63-.2L6.1 12.9l-5.06-1.58c-1.1-.34-1.12-1.1.23-1.63L20.5 2.03c.92-.34 1.72.22 1.44 1.33z"/></svg>`
+};
+
+document.getElementById('nameText').textContent = CONFIG.name;
+document.getElementById('nameText').setAttribute('data-text', CONFIG.name);
+document.getElementById('footerText').textContent = CONFIG.footer;
+document.getElementById('avatarImg').src = CONFIG.avatarUrl;
+
+const bgWrap = document.getElementById('bgWrap');
+if (CONFIG.videoUrl) {
+  const vid = document.createElement('video');
+  vid.autoplay = true;
+  vid.muted = true;
+  vid.defaultMuted = true;
+  vid.loop = true;
+  vid.playsInline = true;
+  vid.setAttribute('muted', '');
+  vid.setAttribute('playsinline', '');
+  vid.setAttribute('webkit-playsinline', '');
+  vid.preload = 'auto';
+  bgWrap.appendChild(vid);
+
+  // small on-screen hint if autoplay gets blocked by the browser
+  const hint = document.createElement('div');
+  hint.textContent = 'Ketuk layar untuk memutar background';
+  hint.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);' +
+    'background:rgba(0,0,0,0.6);color:#fff;font-size:12px;padding:8px 14px;border-radius:20px;' +
+    'z-index:5;display:none;pointer-events:none;';
+  document.body.appendChild(hint);
+
+  const tryPlay = () => {
+    const p = vid.play();
+    if (p && p.catch) {
+      p.then(() => { hint.style.display = 'none'; })
+       .catch(() => { hint.style.display = 'block'; });
+    }
+  };
+
+  vid.addEventListener('error', () => {
+    console.error('Video gagal dimuat. Cek: link masih aktif? format .mp4 valid? URL persis benar?', vid.error);
+    hint.textContent = 'Video gagal dimuat, cek link videoUrl di CONFIG';
+    hint.style.display = 'block';
+  });
+
+  vid.addEventListener('loadeddata', tryPlay);
+
+  vid.src = CONFIG.videoUrl;
+  vid.load();
+  tryPlay();
+
+  const retry = () => { tryPlay(); hint.style.display = 'none'; };
+  document.addEventListener('touchstart', retry, { once: true });
+  document.addEventListener('click', retry, { once: true });
+} else if (CONFIG.imageUrl) {
+  bgWrap.innerHTML = `<img src="${CONFIG.imageUrl}" alt="background">`;
+}
+
+const linksWrap = document.getElementById('linksWrap');
+linksWrap.innerHTML = CONFIG.links.map(link => `
+  <a class="link-btn" href="${link.url}" target="_blank" rel="noopener">
+    <span class="icon ${link.icon}">${ICONS[link.icon] || ''}</span>
+    <span>${link.label}</span>
+    <span class="chevron">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+  </a>
+`).join('');
+</script>
+</body>
+</html>
