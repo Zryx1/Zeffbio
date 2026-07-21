@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zeff</title>
+<style>
+  /* ============================================================
+     CARA GANTI FOTO PROFIL DAN LINK:
+     Scroll ke bagian <script> paling bawah, cari "CONFIG".
+     Tinggal ganti value di dalam tanda kutip "..." nya saja.
+     Untuk foto profil dari catbox.moe, upload filenya di
+     https://catbox.moe/ lalu copy link hasilnya ke avatarUrl.
+     Background sudah pakai efek glow ungu-hitam bawaan CSS,
+     tidak perlu link video lagi.
+     ============================================================ */
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    height: 100%;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #000;
+    overflow-x: hidden;
+  }
+
+  .bg-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    background: #050005;
+    overflow: hidden;
+  }
+
+  .bg-wrap::before,
+  .bg-wrap::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+  }
+
+  .bg-wrap::before {
+    width: 78vw;
+    height: 78vw;
+    top: -20%;
+    left: -15%;
+    background: radial-gradient(circle, rgba(150,60,255,0.55), rgba(90,20,180,0.15) 60%, transparent 75%);
+    animation: float1 12s ease-in-out infinite alternate;
+  }
+
+  .bg-wrap::after {
+    width: 68vw;
+    height: 68vw;
+    bottom: -20%;
+    right: -15%;
+    background: radial-gradient(circle, rgba(120,30,220,0.5), rgba(60,0,120,0.2) 60%, transparent 75%);
+    animation: float2 15s ease-in-out infinite alternate;
+  }
+
+  @keyframes float1 {
+    0% { transform: translate(0,0) scale(1); opacity: 0.85; }
+    50% { transform: translate(10%, 12%) scale(1.25); opacity: 1; }
+    100% { transform: translate(18%, 4%) scale(1.1); opacity: 0.8; }
+  }
+
+  @keyframes float2 {
+    0% { transform: translate(0,0) scale(1); opacity: 0.8; }
+    50% { transform: translate(-12%, -10%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-4%, -18%) scale(1.05); opacity: 0.85; }
+  }
+
+  .bg-grid {
+    position: fixed;
+    inset: -5% -5% -5% -5%;
+    z-index: -1;
+    background-image:
+      linear-gradient(rgba(150,60,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(150,60,255,0.06) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 40%, transparent 90%);
+    animation: grid-drift 22s linear infinite;
+  }
+
+  @keyframes grid-drift {
+    0% { background-position: 0 0, 0 0; }
+    100% { background-position: 42px 84px, 42px 84px; }
+  }
+
+  .particles {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .particle {
+    position: absolute;
+    bottom: -10px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(200,140,255,0.95), rgba(150,60,255,0.1) 70%);
+    animation-name: particle-rise;
+    animation-timing-function: ease-in;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes particle-rise {
+    0% { transform: translateY(0) translateX(0); opacity: 0; }
+    10% { opacity: var(--maxop, 1); }
+    90% { opacity: calc(var(--maxop, 1) * 0.6); }
+    100% { transform: translateY(-110vh) translateX(var(--drift, 20px)); opacity: 0; }
+  }
+
+  .bg-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(ellipse 60% 40% at 50% 0%, rgba(150,60,255,0.16), transparent 70%),
+      linear-gradient(180deg, rgba(5,0,10,0.25) 0%, rgba(5,0,10,0.55) 45%, rgba(0,0,0,0.9) 100%);
+  }
+
+  .page {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 20px 32px;
+  }
+
+  .avatar-ring {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    padding: 3px;
+    background: conic-gradient(from 180deg, #b04dff, #7a2cff, #d63dff, #b04dff);
+    box-shadow: 0 0 22px rgba(160,70,255,0.55), 0 0 46px rgba(120,30,220,0.3);
+    animation: spin 6s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .avatar-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #0a0a0f;
+    overflow: hidden;
+    animation: unspin 6s linear infinite;
+  }
+
+  @keyframes unspin {
+    to { transform: rotate(-360deg); }
+  }
+
+  .avatar-inner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .name-row {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .name {
+    position: relative;
+    display: inline-block;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    color: #fff;
+    text-shadow: 0 0 12px rgba(160,70,255,0.55);
+  }
+
+  .name::before,
+  .name::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: transparent;
+    overflow: hidden;
+  }
+
+  .name::before {
+    color: #ff3dd6;
+    z-index: -1;
+    animation: glitch-1 4.5s infinite linear alternate-reverse;
+  }
+
+  .name::after {
+    color: #7a2cff;
+    z-index: -1;
+    animation: glitch-2 3.8s infinite linear alternate-reverse;
+  }
+
+  @keyframes glitch-1 {
+    0%, 88%, 100% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+    89% { transform: translate(-3px, 1px); clip-path: inset(10% 0 60% 0); opacity: 0.85; }
+    90% { transform: translate(2px, -1px); clip-path: inset(55% 0 15% 0); opacity: 0.85; }
+    91% { transform: translate(-2px, 0); clip-path: inset(20% 0 40% 0); opacity: 0.85; }
+    92% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+  }
+
+  @keyframes glitch-2 {
+    0%, 91%, 100% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+    92% { transform: translate(3px, -1px); clip-path: inset(65% 0 5% 0); opacity: 0.85; }
+    93.5% { transform: translate(-2px, 1px); clip-path: inset(5% 0 70% 0); opacity: 0.85; }
+    95% { transform: translate(2px, 0); clip-path: inset(35% 0 30% 0); opacity: 0.85; }
+    96% { transform: translate(0, 0); clip-path: inset(0 0 0 0); opacity: 0; }
+  }
+
+  /* --- Realistic scalloped "verified" badge --- */
+  .badge-real {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 4px rgba(29,155,240,0.6));
+  }
+
+  .badge-real .lobe {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 40%;
+    top: 50%;
+    left: 50%;
+    background: linear-gradient(135deg, #6fdcff, #1d9bf0 65%);
+  }
+
+  .badge-real .lobe:nth-child(1) { transform: translate(-50%,-50%) rotate(0deg) translateY(-5px) rotate(0deg); }
+  .badge-real .lobe:nth-child(2) { transform: translate(-50%,-50%) rotate(45deg) translateY(-5px) rotate(-45deg); }
+  .badge-real .lobe:nth-child(3) { transform: translate(-50%,-50%) rotate(90deg) translateY(-5px) rotate(-90deg); }
+  .badge-real .lobe:nth-child(4) { transform: translate(-50%,-50%) rotate(135deg) translateY(-5px) rotate(-135deg); }
+  .badge-real .lobe:nth-child(5) { transform: translate(-50%,-50%) rotate(180deg) translateY(-5px) rotate(-180deg); }
+  .badge-real .lobe:nth-child(6) { transform: translate(-50%,-50%) rotate(225deg) translateY(-5px) rotate(-225deg); }
+  .badge-real .lobe:nth-child(7) { transform: translate(-50%,-50%) rotate(270deg) translateY(-5px) rotate(-270deg); }
+  .badge-real .lobe:nth-child(8) { transform: translate(-50%,-50%) rotate(315deg) translateY(-5px) rotate(-315deg); }
+
+  .badge-real .core {
+    position: absolute;
+    inset: 2.5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 26%, #7fe3ff, #1d9bf0 50%, #0b6fa8);
+    box-shadow: 0 0 6px rgba(29,155,240,0.85), inset 0 0 4px rgba(255,255,255,0.45), inset 0 -1px 2px rgba(0,0,0,0.25);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .badge-real .core svg { width: 9px; height: 9px; filter: drop-shadow(0 0.5px 0.5px rgba(0,0,0,0.4)); }
+
+  .tagline {
+    margin-top: 4px;
+    font-size: 10px;
+    letter-spacing: 2.5px;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+  }
+
+  .links {
+    width: 100%;
+    max-width: 340px;
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+
+  .link-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 14px;
+    background: rgba(30,10,40,0.5);
+    border: 1px solid rgba(160,70,255,0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    text-decoration: none;
+    color: #fff;
+    font-size: 13.5px;
+    font-weight: 600;
+    transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .link-btn:hover {
+    background: rgba(45,15,60,0.7);
+    border-color: rgba(160,70,255,0.3);
+  }
+
+  .icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .icon svg { width: 14px; height: 14px; }
+
+  .icon.tiktok { background: #000; }
+  .icon.whatsapp { background: #25D366; }
+  .icon.telegram { background: #24A1DE; }
+
+  .chevron {
+    margin-left: auto;
+    opacity: 0.4;
+  }
+
+  .link-btn:active {
+    transform: scale(0.97);
+  }
+
+  .footer {
+    margin-top: 32px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.3);
+    text-transform: lowercase;
+  }
+</style>
+</head>
+<body>
+
+  <div class="bg-wrap" id="bgWrap"></div>
+  <div class="bg-grid"></div>
+  <div class="particles" id="particles"></div>
+  <div class="bg-overlay"></div>
+
+  <div class="page">
+    <div class="avatar-ring">
+      <div class="avatar-inner">
+        <img id="avatarImg" src="" alt="avatar">
+      </div>
+    </div>
+
+    <div class="name-row">
+      <span class="name" id="nameText"></span>
+      <span class="badge-real">
+        <span class="lobe"></span><span class="lobe"></span><span class="lobe"></span><span class="lobe"></span>
+        <span class="lobe"></span><span class="lobe"></span><span class="lobe"></span><span class="lobe"></span>
+        <span class="core">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M9 12.5l2 2 4-4.5" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </span>
+    </div>
+
+    <div class="tagline">Contact Me</div>
+
+    <div class="links" id="linksWrap"></div>
+
+    <div class="footer" id="footerText"></div>
+  </div>
+
+<script>
+/* ============================================================
+   CONFIG — GANTI SEMUA DI SINI SESUAI KEINGINAN KAMU
+   ============================================================ */
+const CONFIG = {
+  // Nama yang tampil (sudah diganti jadi "Zeff")
+  name: "Zeff",
+
+  // Foto profil (bulat). Ganti dengan link gambar kamu,
+  // bisa dari catbox.moe juga, contoh:
+  // "https://files.catbox.moe/xxxxxx.png"
+  avatarUrl: "https://files.catbox.moe/vzosd5.jpg",
+
+  // Teks kecil di paling bawah halaman
+  footer: "zeff • 2026",
+
+  // Daftar tombol link. Urutan di array = urutan tampil.
+  // Kalau mau hapus salah satu, hapus seluruh blok { ... } nya.
+  links: [
+    {
+      label: "TikTok",
+      url: "https://tiktok.com/@zeffv12",
+      icon: "tiktok"
+    },
+    {
+      label: "WhatsApp",
+      url: "https://wa.me/6285930242266",
+      icon: "whatsapp"
+    },
+    {
+      label: "Telegram",
+      url: "https://t.me/@zeffmoon",
+      icon: "telegram"
+    }
+  ]
+};
+/* ============================================================ */
+
+const ICONS = {
+  tiktok: `<svg viewBox="0 0 24 24" fill="#fff"><path d="M16.6 5.82s.51.5 0 0A4.278 4.278 0 0 1 15.54 3h-3.09v12.4a2.59 2.59 0 1 1-2.59-2.59c.17 0 .34.02.5.05V9.71a5.9 5.9 0 0 0-.5-.02 5.87 5.87 0 1 0 5.87 5.87V9.6a7.13 7.13 0 0 0 4.18 1.34V7.85a4.25 4.25 0 0 1-2.31-2.03z"/></svg>`,
+  whatsapp: `<svg viewBox="0 0 24 24" fill="#fff"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.28-1.38a9.87 9.87 0 0 0 4.71 1.2h.01c5.46 0 9.9-4.45 9.9-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm5.8 14.06c-.24.68-1.39 1.3-1.93 1.38-.49.08-1.11.11-1.79-.11a16.6 16.6 0 0 1-1.62-.6c-2.86-1.24-4.72-4.13-4.86-4.32-.14-.19-1.17-1.55-1.17-2.96 0-1.4.73-2.09 1-2.38.26-.28.57-.35.76-.35.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.11.31.02.5-.09.19-.14.31-.28.47-.14.16-.29.36-.42.48-.14.14-.28.29-.12.57.16.28.71 1.17 1.53 1.9 1.05.94 1.94 1.23 2.22 1.37.28.14.44.12.6-.07.16-.19.68-.79.86-1.06.18-.28.36-.23.6-.14.24.09 1.55.73 1.82.86.26.14.44.2.5.32.07.11.07.65-.17 1.32z"/></svg>`,
+  telegram: `<svg viewBox="0 0 24 24" fill="#fff"><path d="M21.94 3.36L18.6 20.24c-.25 1.1-.9 1.37-1.83.85l-5.06-3.73-2.44 2.35c-.27.27-.5.5-1.02.5l.36-5.14 9.35-8.45c.41-.36-.09-.56-.63-.2L6.1 12.9l-5.06-1.58c-1.1-.34-1.12-1.1.23-1.63L20.5 2.03c.92-.34 1.72.22 1.44 1.33z"/></svg>`
+};
+
+document.getElementById('nameText').textContent = CONFIG.name;
+document.getElementById('nameText').setAttribute('data-text', CONFIG.name);
+document.getElementById('footerText').textContent = CONFIG.footer;
+document.getElementById('avatarImg').src = CONFIG.avatarUrl;
+
+// gentle floating particles for the background
+const particlesWrap = document.getElementById('particles');
+const PARTICLE_COUNT = 55;
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const size = 1.5 + Math.random() * 5;
+  const left = Math.random() * 100;
+  const duration = 8 + Math.random() * 16;
+  const delay = Math.random() * -26;
+  const drift = (Math.random() * 80 - 40).toFixed(0) + 'px';
+  const opacity = (0.4 + Math.random() * 0.6).toFixed(2);
+  p.style.width = size + 'px';
+  p.style.height = size + 'px';
+  p.style.left = left + '%';
+  p.style.setProperty('--drift', drift);
+  p.style.setProperty('--maxop', opacity);
+  p.style.animationDuration = duration + 's';
+  p.style.animationDelay = delay + 's';
+  particlesWrap.appendChild(p);
+}
+
+const linksWrap = document.getElementById('linksWrap');
+linksWrap.innerHTML = CONFIG.links.map(link => `
+  <a class="link-btn" href="${link.url}" target="_blank" rel="noopener">
+    <span class="icon ${link.icon}">${ICONS[link.icon] || ''}</span>
+    <span>${link.label}</span>
+    <span class="chevron">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+  </a>
+`).join('');
+</script>
+</body>
+</html>
