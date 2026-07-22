@@ -421,7 +421,7 @@ document.getElementById('avatarImg').src = CONFIG.avatarUrl;
 if (CONFIG.soundUrl) {
   const audio = new Audio(CONFIG.soundUrl);
   audio.loop = true;
-  audio.volume = 0.6;
+  audio.volume = 1.0;
 
   const toggleBtn = document.getElementById('soundToggle');
   const ICON_ON = `<svg viewBox="0 0 24 24" fill="none"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="#fff"/><path d="M16.5 8.5a5 5 0 0 1 0 7" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M19 6a9 9 0 0 1 0 12" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/></svg>`;
@@ -484,6 +484,7 @@ if (CONFIG.videoUrl) {
 }
 
 
+const particlesWrap = document.getElementById('particles');
 const PARTICLE_COUNT = 55;
 for (let i = 0; i < PARTICLE_COUNT; i++) {
   const p = document.createElement('div');
